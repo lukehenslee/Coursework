@@ -17,7 +17,7 @@ library(ggridges)
 library(reshape2)
 library(cowplot)
 # Set your working directory!!!!!
-setwd("/Users/curryc2/Documents/Students/2021/622 - Quant Fish Pop Dynamics/Content/Week 10/Lab")
+setwd("C:/Users/lhhenslee/Desktop/Luke/School/Coursework/622/data")
 
 
 # Part A: Simple Age-Structured Assessment Model in R ===========================================
@@ -386,7 +386,7 @@ manipulate(plot_Numbers(Nyear=Nyear, Nage=Nage, ages=ages,
 
 # Functions to Generate Expected Values ==================================
 
-# Now that we have a function or projecting our numbers-at-age, lets create a  function
+# Now that we have a function for projecting our numbers-at-age, lets create a  function
 #   to extract the model-predicted quantities we will compared to our observed data.
 
 #   The arguments for this function would be:
@@ -845,7 +845,7 @@ plot.age.obs <- ggplot(data=list_Propn_obs, aes(x=Year, y=obs.prop, fill=Age)) +
   ylab("Catch Age Composition Proportions") +
   ggtitle("Observed")
 
-plot.age.pred
+plot.age.obs
 
 # Now lets plot these figures side by side using the plot_grid() function in 
 #   the cowplot library
