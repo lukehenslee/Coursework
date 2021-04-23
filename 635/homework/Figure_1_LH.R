@@ -63,10 +63,10 @@ alaska2 <- ggmap(alaska.base2) +
   geom_point (data = sites, aes (x = long, y = lat), size = 2, color = "grey20") + 
   xlab(NULL) + ylab (NULL) + 
   scale_x_continuous (breaks = c(-166, -165, -164), 
-                      labels = c("166°W", "165°W", "164°W"), 
+                      labels = c("166?W", "165?W", "164?W"), 
                       expand = c(0,0)) + 
   scale_y_continuous (breaks = c(64.25, 64.75, 65.25), 
-                      labels = c ("64.25°N", "64.75°N", "65.25°N"), 
+                      labels = c ("64.25?N", "64.75?N", "65.25?N"), 
                       expand = c(0,0)) + 
   theme (panel.border = element_rect (fill = "transparent", color = "grey20", size = 2)) +
   theme (plot.margin = unit(c(0,0,0,0), "cm"))
@@ -117,10 +117,10 @@ alaska2 <- ggmap(alaska.base2) +
   annotate("text", x = -165.1, y = 64.35, label = "Subsistence\nzone", size = 5) +
   xlab(NULL) + ylab (NULL) + 
   scale_x_continuous (breaks = c(-166, -165, -164), 
-                      labels = c("166°W", "165°W", "164°W"), 
+                      labels = c("166("*~degree*W*")", "165?W", "164?W"), 
                       expand = c(0,0)) + 
   scale_y_continuous (breaks = c(64.25, 64.75, 65.25), 
-                      labels = c ("64.25°N", "64.75°N", "65.25°N"), 
+                      labels = c ("64.25?N", "64.75?N", "65.25?N"), 
                       expand = c(0,0)) + 
   annotation_north_arrow(style = north_arrow_nautical()) + 
   coord_sf(crs = 4326) + 
