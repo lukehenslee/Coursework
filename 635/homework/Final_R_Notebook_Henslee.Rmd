@@ -179,9 +179,9 @@ ggplot(data = world) +
         theme_classic() +  
         geom_sf() +
         coord_sf(xlim = c(-161.5, -160.5), ylim = c(63.5, 64.5), expand = TRUE)  +
-        geom_point(data=stocks,
-                   aes(x=Long, y=Lat, color=Spawning.group), alpha=0.5) +
-        scale_color_viridis(discrete = TRUE, option = "C") 
+        geom_point(data=pred.data.3,
+                   aes(x=long, y=lat, color=pred), alpha=0.5) +
+        scale_color_viridis(discrete = F, option = "C") 
 ```
 
 ```{r}
@@ -220,6 +220,32 @@ theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b =
       axis.line = element_line(colour = "black", size = 0.5, lineend = "square"),
       panel.border = element_rect(color = "black", fill = "transparent", size = 0.5))
 ```
+
+```{r}
+SD5 <- get_map(location=c(-161.6, 64.1,
+                              -160.75, 64.5),
+                   maptype='toner-lite', source='stamen', crop=TRUE)
+
+SD56 <- get_map(location=c(-161.6, 63.8,
+                              -160.75, 64.5),
+                   maptype='toner-lite', source='stamen', crop=TRUE)
+```
+
+
+```{r}
+ggmap(SD5) +
+        geom_point(data = pred.data.3, aes(x=long, 
+                       y=lat, color = pred), alpha = 0.5, size = 3) +
+  scale_color_viridis(discrete = F, option = "C") 
+  
+```
+
+```{r}
+ggmap(SD5) +
+        geom_point(data = pred.coords, aes(x=shit, 
+                       y=shat))
+```
+
 
 ```{r}
 ggmap(SD56) +
