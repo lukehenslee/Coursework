@@ -1,10 +1,11 @@
 ---
-title: "Final project "
+title: 'Final project '
 author: "Luke Henslee"
 date: "`r Sys.Date()`"
 output:
   html_document:
     df_print: paged
+  html_notebook: default
 ---
 
 ```{r, include=FALSE, results=FALSE}
@@ -173,12 +174,12 @@ bi_model <- glm(binomial ~ Lat + Long, data = stocks5,
 ```
 
 #### 2) Build plot
-```{r}
+```{r message=FALSE, warning=FALSE}
 ggplot(stocks5, aes(Lat, binomial)) +
   geom_point(shape = 3) +
   geom_smooth(size = 0.5, color = "black", method = "glm", se = T, 
               method.args = list(family = "binomial")) +
-  scale_x_continuous(name = "Latitude (N)", expand = c(0,0), 
+  scale_x_continuous(name = "Latitude (\u00B0N)", expand = c(0,0), 
                      breaks = seq(64.15, 64.35, .05)) +
   scale_y_continuous(name = "Likelihood", 
                      expand = c(0, 0), 
@@ -207,7 +208,7 @@ ggplot(stocks5, aes(Lat, binomial)) +
 ### Figure 5
 
 #### 1) Generate predictions
-```{r}
+```{r message=FALSE, warning=FALSE}
 # Import coordinates from shoreline of SD5
 
 pred.coords <- read.csv("pred_coords.csv")
@@ -221,7 +222,7 @@ pred.data <- data.frame(cbind(pred.coords$lat, pred.coords$long, Likelihood))
 ```
 
 #### 2) Create basemap
-```{r echo=FALSE}
+```{r message=FALSE, warning=FALSE}
 SD5map <- c(left = -161.6, bottom = 64.1, right = -160.8, top = 64.5)
 
 SD5 <- ggmap::get_stamenmap (bbox = SD5map, zoom = 10, maptype = "terrain-background", where = "cache")
@@ -231,7 +232,7 @@ SD5 <- get_map(location=c(-161.6, 64.1,-160.8, 64.5),
 ```
 
 #### 3) Create stat map
-```{r}
+```{r message=FALSE, warning=FALSE}
 statmap <- ggmap(SD5) +
   geom_point(data = pred.data, aes(x = V2, y = V1, color = Likelihood), size = 5, alpha = 0.5) +
   labs(fill = "Likelihood") +
@@ -246,7 +247,7 @@ statmap <- ggmap(SD5) +
         axis.title.x = element_text(size = 14, margin = margin(t = 0, r = 0, b = 0, l = 0), colour = "black"),
         text = element_text(family = "Times New Roman")) +
   theme (panel.border = element_rect (fill = "transparent", color = "grey20", size = 2)) +
-  theme (legend.position = c(0.85,0.75),
+  theme (legend.position = c(0.75,0.75),
       legend.text = element_text(size = 12),
       legend.title = element_text(size = 12),
       plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
@@ -262,23 +263,23 @@ statmap <- ggmap(SD5) +
   theme (plot.margin = unit(c(0,0,.5,0), "cm")) 
 ```
 
-#### 4 Create subset map
-```{r}
+#### 4) Create subset map
+```{r message=FALSE, warning=FALSE}
 alaska.box2 <- c(left = -169, bottom = 60, right = -145, top = 68)
 alaska.base2 <- ggmap::get_stamenmap (bbox = alaska.box2, zoom = 5, maptype = "terrain-background", 
                                      where = "cache")
 alaska <- ggmap(alaska.base2) +
   geom_rect(xmin = -161.5, xmax = -160.5, ymin = 64, ymax = 64.5, fill = "transparent", 
-            color = "grey20", size = 1) + theme_void() + 
+            color = "grey20", size = .5) + theme_void() + 
   theme (panel.border = element_rect (fill = "transparent", color = "grey20", size = 1)) +
   theme (plot.margin = unit(c(0,0,0,0), "cm"))
 ```
 
 #### 5) Combine maps
-```{r}
+```{r message=FALSE, warning=FALSE}
 figmap <- ggdraw() +
   draw_plot(statmap) +
-  draw_plot(alaska, x = 0.32, y = 0.32, width = 0.25, height = 0.25)
+  draw_plot(alaska, x = 0.30, y = 0.30, width = 0.25, height = 0.25)
 
 figmap
 ```
