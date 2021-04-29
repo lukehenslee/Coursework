@@ -212,8 +212,79 @@ str(dat)
 
 # SOLUTION:
 
+# 1) Creat LVB function
+LVB.fun <- function(Linf, k, t0, age) {
+  Lage = Linf * (1 - exp(-1 * k * (age - t0)))
+  return(Lage)
+}
 
+# 2) Create NLL function
+NLL.LVB <- function(data, ln_Linf, ln_k, t0, ln_sigma) {
+  # Exponentiate parameters in log space
+  Linf <- exp(ln_Linf)
+  k <- exp(ln_k)
+  sigma <- exp(ln_sigma)
+  
+  # Extract obs
+  obs.age <- dat$Age..years.
+  obs.length <- dat$Length..mm.
+  
+  # Generate predictions
+  LVB.pred <- LVB.fun(Linf = Linf, k = k, t0 = t0, age = obs.age)
+  
+  # Calculate log-likelihood from dnorm
+  logLike <- dnorm(x = log(obs.length + 1e-6), mean = log(LVB.pred + 1e-6), 
+                   sd = sigma, log = T)
+  
+  # Calculate NLL
+  NLL <- -1 * sum(logLike, na.rm = T)
+}
 
+# 3) Fit model to data
+
+LVB.mle <- mle2(NLL.LVB,
+                start = list(ln_Linf = log(700), ln_k = log(0.2),
+                             t0 = 0, ln_sigma = log (0.5)),
+                data = list(data = dat),
+                method = "Nelder-Mead",
+                optimizer = "nlminb",
+                control = list(maxit = 1e6))
+
+summary(LVB.mle)
+
+# Linf
+Linf <- exp(as.numeric(coef(LVB.mle)[1]))
+
+# k
+k <- exp(as.numeric(coef(LVB.mle)[2]))
+
+# t0
+t0 <- as.numeric(coef(LVB.mle)[3])
+
+# sigma
+exp(as.numeric(coef(LVB.mle)[4]))
+
+# 4) Plot
+LVB.pred <- LVB.fun(Linf = Linf, k = k, t0 = t0, age = dat$Age..years.)
+
+ggplot(dat, aes(x = Age..years., y = Length..mm.)) +
+  geom_point() +
+  geom_line(aes(x = Age..years., y = LVB.pred), color = "red", size = 1.5) +
+  xlab("Age") +
+  ylab("Length (mm)") +
+  theme_classic() +
+  theme(axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+        axis.title.x = element_text(size = 14, margin = margin(t = 10, r = 0, b = , l = 0), colour = "black"),
+        text = element_text(family = "Times New Roman"),
+        plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+        axis.ticks.y = element_line(size = 0.5),
+        axis.ticks.x = element_line(size = 0.5),
+        axis.ticks.length = unit(0.2,"cm"),
+        axis.text.y = element_text(colour = "black", size = 12, angle = 0, vjust = 0.5, hjust = 1,
+                                   margin = margin(t = 0, r = 5, b = 0, l = 0)),
+        axis.text.x = element_text(colour = "black", size = 14, angle = 0, vjust = 0, hjust = 0.5,
+                                   margin = margin(t = 5, r = 0, b = 0, l = 0)),
+        axis.line = element_line(colour = "black", size = 0.5, lineend = "square"))
 
 
 
