@@ -45,8 +45,8 @@ Ca <- vector(length=Nage)
 
 # 1) Dome-shaped selectivity 
 dome <- function(age, amax, delta) {
-  p <- 0.5*(sqrt(amax^2 + 4*delta^2) - amax )
-  sa <- ((age/amax)^(amax/p)) * exp((amax-age)/p)
+  p <- 0.5*(sqrt(amax ^ 2 + 4 * delta ^ 2) - amax)
+  sa <- ((age/amax) ^ (amax/p)) * exp((amax - age)/p)
   
   return(sa)
 }
@@ -79,15 +79,15 @@ Z
 # 4) Numbers at age
 Na[1] <- Nr
 
-for(i in 2:length(Na)) {
-  Na[i] <- Nr * exp(-Z[i] * (ages[i] - ages[1]))
+for(i in 2:length(Na)) { 
+  Na[i] <- Na[i - 1] * exp(-Z[i - 1])
 }
 
 Na
 
 # 5) Catch at age
 for(i in 1:length(Na)) {
-  Ca[i] <- Nr * (Fa[i]/Z[i]) * (1 - exp(-Z[i] * (ages[i] - ages[1])))
+  Ca[i] <- Na[i] * (Fa[i]/Z[i]) * (1 - exp(-Z[i]))
 }
 
 Ca
@@ -123,6 +123,8 @@ S <- matrix(data = c(0.3, 0, 0, 0, 0, 0, 0,
                      0, 0, 0, 0, 0, 0, 0.8),
             nrow = 7, ncol = 7, byrow = T)
 
+S
+
 # 2) Creat recruitment matrix (R)
 S0 <- 0.04
 
@@ -152,11 +154,11 @@ Nstart <- c(1000, 800, 600, 400, 200, 100, 10)
 N <- matrix(data = NA, nrow = 7, ncol = 25, dimnames=list(paste("Class", c(1:7)), paste("Year", c(1:25))))
 
 # 2) Simulate
-for(i in 0:(ncol(N) - 1)) {
-  if(i == 0) {
-    N[,i + 1] <- (X %*% S + R) %*% Nstart
+for(i in 1:(ncol(N))) {
+  if(i == 1) {
+    N[,i] <- (X %*% S + R) %*% Nstart
   } else {
-    N[,i + 1] <- (X %*% S + R) %*% N[,i]
+    N[,i] <- (X %*% S + R) %*% N[,i - 1]
   }
 }
 
@@ -174,11 +176,7 @@ si <- c(0, 0, 0, 0.2, 0.5, 0.75, 1)
 
 F <- 0.2
 
-siF <- vector(length = length(si))
-
-for(i in 1:length(si)) {
-  siF[i] <- si[i] * F
-}
+siF <- si * F
 
 S2 <- S * exp(-siF)
 
@@ -186,11 +184,11 @@ S2 <- S * exp(-siF)
 N2 <- matrix(data = NA, nrow = 7, ncol = 25, dimnames=list(paste("Class", c(1:7)), paste("Year", c(1:25))))
 
 # 3) Simulate
-for(i in 0:(ncol(N2) - 1)) {
-  if(i == 0) {
-    N2[,i + 1] <- (X %*% S2 + R) %*% Nstart
+for(i in 1:(ncol(N2))) {
+  if(i == 1) {
+    N2[,i] <- (X %*% S2 + R) %*% Nstart
   } else {
-    N2[,i + 1] <- (X %*% S2 + R) %*% N2[,i]
+    N2[,i] <- (X %*% S2 + R) %*% N2[,i - 1]
   }
 }
 
