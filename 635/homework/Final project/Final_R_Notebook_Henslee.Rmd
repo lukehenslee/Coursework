@@ -1,0 +1,415 @@
+---
+title: "Final Assignment"
+author: "Luke Henslee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r, include=FALSE, results=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(extrafont)
+library(ggpubr)
+library(forcats)
+library(ggforce)
+library(ggridges)
+library(lubridate)
+library(RColorBrewer)
+library(viridis)
+library(readr)
+# Load fonts
+loadfonts(device = "win")
+```
+
+### Import data   
+
+```{r, root.dir}
+setwd("C:/Users/lukeh/Desktop/Grad School/Coursework/635/data")
+
+mcode <- read.csv("M_code_list.csv")
+
+# Subset data to fish assigned to stocks
+stocks <- filter(mcode, mcode$Spawning.group %in% c("4", "5", "6", "S"))
+
+# Convert 'Date'
+stocks$Date <- mdy(stocks$Date)
+```
+
+### Figure 1- Length distribution
+
+#### 1) Build plot  
+
+First we plot length distribution between the four identified stocks.
+```{r}
+# Build 'lengthdist'
+lengthdist <- ggplot(data = stocks, aes(x = Spawning.group, y = Length)) +
+geom_boxplot() +
+  scale_x_discrete(breaks = c("6", "5", "4", "S"), 
+    labels = c("Unalakleet", "Shaktoolik", "Norton Bay", "Yukon")) +
+scale_y_continuous (limits = c(375,700), expand = c(0,0), breaks = seq(400,700,50)) +
+ylab("Length (mm)") +
+theme_classic() +
+theme(axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+      axis.title.x = element_blank(),
+      text = element_text(family = "Times New Roman"),
+      plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 12, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 14, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"))
+lengthdist
+```
+
+Save plot
+
+```{r}
+dev.new(width = 2.75, height = 1.83, units = "in", noRStudioGD = TRUE)
+last_plot()
+
+ggsave(file = "Final_lengthdist_1.tiff", width = dev.size()[1], height = dev.size()[2], dpi = 300)
+```
+
+Let's try a length distribution plot using just stocks 5, 6, and S, since there were only four samples for stock 4.
+
+```{r}
+stocks2 <- filter(mcode, mcode$Spawning.group %in% c("5", "6", "S"))
+
+lengthdist2 <- ggplot(data = stocks2, aes(x = Spawning.group, y = Length)) +
+geom_boxplot() +
+  scale_x_discrete(breaks = c("6", "5", "S"), 
+    labels = c("Unalakleet", "Shaktoolik", "Yukon")) +
+scale_y_continuous (limits = c(375,700), expand = c(0,0), breaks = seq(400,700,50)) +
+ylab("Length (mm)") +
+xlab("Stocks") +
+theme_classic() +
+theme(axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+      axis.title.x = element_blank(),
+      text = element_text(family = "Times New Roman"),
+      plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 12, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 12, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"))
+lengthdist2
+```
+
+Really not that interesting, I don't think I'm going to use it.
+
+### Figure 2- Catch proportions by stock
+
+We're going to visualize proportions of total catch by stock throughout the season.
+
+We are using the "count" stat, is it the same as proportion/density? No, because then the whole background would be filled since it equals 100%, unless that was the daily proportion of the total. Might try to mess around witht that.
+
+```{r}
+ggplot(stocks, aes(x = yday(Date), y = ..count..)) +
+  geom_density_line(data = select(stocks, -Spawning.group), color = "transparent") +
+  geom_density_line(fill = "blue", alpha = 0.5, color = "transparent") +
+  facet_wrap(~Spawning.group, nrow = 4) +
+  scale_x_continuous(name = "Day of year", limits = c(213,239), expand = c(0,0), breaks = seq(215,235,5))
+```
+
+I'm going to save this one.
+```{r}
+dev.new(width = 2.75, height = 1.83, units = "in", noRStudioGD = TRUE)
+last_plot()
+
+ggsave(file = "Final_stock_count_wrap.tiff", width = dev.size()[1], height = dev.size()[2], dpi = 300)
+```
+
+Try to visualize all in one plot.
+
+```{r}
+ggplot(stocks, aes(x = yday(Date), y = ..count..)) +
+  geom_density_line(data = select(stocks, -Spawning.group), alpha = 0.5, color = "darkgrey", fill = "lightgrey", size = 0.25) +
+  geom_density_line(aes(fill = fct_infreq(Spawning.group)), alpha = 0.5, color = "black", size = 0.25) +
+  scale_x_continuous(name = "Day of year", limits = c(213,239), expand = c(0,0), breaks = seq(215,235,5)) +
+  scale_y_continuous(name = "Count", expand = c(0, 0), limits = c(0, 22), breaks = seq(5, 20, 5)) +
+  scale_fill_brewer(type = "qual", guide = "legend",
+    palette = "Set2", name = "Stocks", breaks = c("6", "5", "4", "S"), 
+    labels = c("Unalakleet", "Shaktoolik", "Norton Bay", "Yukon")) +
+  theme_classic() +
+theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+      axis.title.x = element_text(size = 14, margin = margin(t = 10, r = 0, b = 0, l = 0), colour = "black"),
+      text = element_text(family = "Times New Roman"),
+      legend.position = c(0.75,0.75),
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 12),
+      legend.key.size = unit(.5, "cm"),
+      plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 14, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 14, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"),
+      panel.border = element_rect(color = "black", fill = "transparent", size = 0.5))
+```
+```{r}
+dev.new(width = 20.32, height = 7.62, units = "cm", noRStudioGD = TRUE)
+last_plot()
+
+ggsave(file = "Final_density_V5.tiff", width = dev.size()[1], height = dev.size()[2], dpi = 300)
+```
+
+# Figure 2 
+
+```{r}
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(ggspatial)
+library(sf)
+library(rgeos)
+library(ggmap)
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+ggplot(data = world) +
+        theme_classic() +  
+        geom_sf() +
+        coord_sf(xlim = c(-161.5, -160.5), ylim = c(63.5, 64.5), expand = TRUE)  +
+        geom_point(data=pred.data.3,
+                   aes(x=long, y=lat, color=pred), alpha=0.5) +
+        scale_color_viridis(discrete = F, option = "C") 
+```
+
+```{r}
+SD5 <- get_map(location=c(-161.6, 64.1,
+                              -160.75, 64.5),
+                   maptype='toner-lite', source='stamen', crop=TRUE)
+
+SD56 <- get_map(location=c(-161.6, 63.8,
+                              -160.75, 64.5),
+                   maptype='toner-lite', source='stamen', crop=TRUE)
+```
+
+
+```{r}
+ggmap(SD5) +
+        geom_point(data = stocks5, aes(x=Long, 
+                       y=Lat, color = Spawning.group), alpha = 0.5, size = 3) +
+  scale_fill_brewer(
+    palette = "Set2", name = "Stocks", breaks = c("6", "5", "4", "S"), 
+    labels = c("Unalakleet", "Shaktoolik", "Norton Bay", "Yukon")) +
+  theme_classic() +
+theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+      axis.title.x = element_text(size = 14, margin = margin(t = 10, r = 0, b = 0, l = 0), colour = "black"),
+      text = element_text(family = "Times New Roman"),
+      legend.position = c(0.1,0.1),
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 12),
+      plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 14, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 14, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"),
+      panel.border = element_rect(color = "black", fill = "transparent", size = 0.5))
+```
+
+```{r}
+SD5 <- get_map(location=c(-161.6, 64.1,
+                              -160.75, 64.5),
+                   maptype='toner-lite', source='stamen', crop=TRUE)
+
+SD56 <- get_map(location=c(-161.6, 63.8,
+                              -160.75, 64.5),
+                   maptype='toner-lite', source='stamen', crop=TRUE)
+```
+
+
+```{r}
+ggmap(SD5) +
+        geom_point(data = pred.data.3, aes(x=long, 
+                       y=lat, color = pred), alpha = 0.5, size = 3) +
+  scale_color_viridis(discrete = F, option = "C") 
+  
+```
+
+```{r}
+ggmap(SD5) +
+        geom_point(data = pred.coords, aes(x=shit, 
+                       y=shat))
+```
+
+
+```{r}
+ggmap(SD56) +
+        geom_violin(data=stocks,
+                   aes(x=Spawning.group, y=Lat, color="blue")) 
+```
+
+```{r}
+ggplot(data = stocks, aes(x = Spawning.group, y = Lat)) +
+  geom_violin(aes(fill = fct_infreq(Spawning.group)), alpha = 0.5, color = "black", size = 0.5) +
+  geom_hline(yintercept = 64.131287, linetype = "dashed") +
+  scale_x_discrete(name = "", breaks = c("6", "5", "4", "S"), 
+    labels = c("Unalakleet", "Shaktoolik", "Norton Bay", "Yukon")) + 
+  scale_y_continuous(name = "Latitude of capture", expand = c(0, 0), limits = c(63.8, 64.4), breaks = seq(63.8, 64.4, 0.2)) +
+  scale_fill_brewer(type = "qual", guide = "legend",
+    palette = "Set2", name = "Stocks", breaks = c("6", "5", "4", "S"), 
+    labels = c("Unalakleet", "Shaktoolik", "Norton Bay", "Yukon")) +
+  theme_classic() +
+theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+      axis.title.x = element_blank(),
+      text = element_text(family = "Times New Roman"),
+      legend.position = "none",
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 12),
+      plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 12, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 14, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"),
+      panel.border = element_rect(color = "black", fill = "transparent", size = 0.5))
+```
+
+```{r}
+dev.new(width = 2.75, height = 1.83, units = "in", noRStudioGD = TRUE)
+last_plot()
+
+ggsave(file = "Final_violin.tiff", width = dev.size()[1], height = dev.size()[2], dpi = 300)
+```
+
+
+
+```{r}
+ggplot(data = stocks, aes(x = Spawning.group, y = Lat)) +
+  geom_violin() +
+  geom_sina() +
+  scale_x_discrete(breaks = c("6", "5", "4", "S"), 
+    labels = c("Unalakleet", "Shaktoolik", "Norton Bay", "Yukon")) + 
+  scale_y_continuous(name = "Latitude of capture", expand = c(0, 0), limits = c(63.8, 64.4), breaks = seq(63.8, 64.4, 0.2)) +
+  xlab(label = "") +
+  geom_hline(yintercept = 64.131287) +
+  theme_classic() +
+theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+      axis.title.x = element_text(size = 14, margin = margin(t = 10, r = 0, b = 0, l = 0), colour = "black"),
+      text = element_text(family = "Times New Roman"),
+      plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 12, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 12, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"),
+      panel.border = element_rect(color = "black", fill = "transparent", size = 0.5))
+```
+
+
+```{r}
+ggplot(data = stocks, aes(x = Spawning.group, y = Lat)) +
+  geom_violin(aes(fill = fct_infreq(Spawning.group)), alpha = 0.5, color = "black", size = 0.5) +
+  geom_hline(yintercept = 64.131287, linetype = "dashed") +
+  geom_sina() +
+  scale_x_discrete(name = "", breaks = c("6", "5", "4", "S"), 
+    labels = c("Unalakleet", "Shaktoolik", "Norton Bay", "Yukon")) + 
+  scale_y_continuous(name = "Latitude of capture", expand = c(0, 0), limits = c(63.8, 64.4), breaks = seq(63.8, 64.4, 0.2)) +
+  scale_fill_brewer(type = "qual", guide = "legend",
+    palette = "Set2", name = "Stocks", breaks = c("6", "5", "4", "S"), 
+    labels = c("Unalakleet", "Shaktoolik", "Norton Bay", "Yukon")) +
+  theme_classic() +
+theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+      axis.title.x = element_blank(),
+      text = element_text(family = "Times New Roman"),
+      legend.position = "none",
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 12),
+      plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 12, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 14, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"),
+      panel.border = element_rect(color = "black", fill = "transparent", size = 0.5))
+```
+
+```{r}
+dev.new(width = 2.75, height = 1.83, units = "in", noRStudioGD = TRUE)
+last_plot()
+
+ggsave(file = "Final_violin_sina.tiff", width = dev.size()[1], height = dev.size()[2], dpi = 300)
+```
+
+# GLM
+
+```{r}
+stocks5 <- filter(stocks, stocks$Tag.group == 2)
+
+bi <- vector(length = nrow(stocks5))
+
+for(i in 1:length(bi)) {
+  if(stocks5[i,9] == stocks5[i,16]) {
+    bi[i] <- 1
+  } else {
+    bi[i] <- 0
+  }
+}
+
+stocks5$binomial <- bi
+```
+
+
+```{r}
+ggplot(stocks5, aes(Lat, binomial)) +
+  geom_rug() +
+  geom_smooth(size = 0.5, color = "black", method = "glm", se = T, 
+              method.args = list(family = "binomial")) +
+  scale_x_continuous(name = "Latitude", expand = c(0,0), 
+                     breaks = seq(64.15, 64.35, .05)) +
+  scale_y_continuous(name = "Likelihood", 
+                     expand = c(0, 0), 
+                     limits = c(0, 1), 
+                     breaks = seq(0, 1, .2)) +
+  theme_classic() +
+  theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+         axis.title.x = element_text(size = 14, margin = margin(t = 10, r = 0, b = 0, l = 0), colour = "black"),
+         text = element_text(family = "Times New Roman"),
+         legend.position = c(0.75,0.75),
+         legend.text = element_text(size = 12),
+         legend.title = element_text(size = 12),
+         legend.key.size = unit(.5, "cm"),
+         plot.margin = unit(c(0.2, 0.1, 0.1, 0.1), "cm"),
+         axis.ticks.y = element_line(size = 0.5),
+         axis.ticks.x = element_line(size = 0.5),
+         axis.ticks.length = unit(0.2,"cm"),
+         axis.text.y = element_text(colour = "black", size = 14, angle = 0, vjust = 0.5, hjust = 1,
+                                    margin = margin(t = 0, r = 5, b = 0, l = 0)),
+         axis.text.x = element_text(colour = "black", size = 14, angle = 90, vjust = 0, hjust = 0.5,
+                                    margin = margin(t = 5, r = 0, b = 0, l = 0)),
+         axis.line = element_line(colour = "black", size = 0.5, lineend = "square"),
+         panel.border = element_rect(color = "black", fill = "transparent", size = 0.5))
+```
+
+
+```{r}
+dev.new(width = 2.75, height = 1.83, units = "in", noRStudioGD = TRUE)
+last_plot()
+
+ggsave(file = "glm.tiff", width = dev.size()[1], height = dev.size()[2], dpi = 300)
+```
+
+
