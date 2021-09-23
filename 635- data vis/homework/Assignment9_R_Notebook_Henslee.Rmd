@@ -1,0 +1,133 @@
+---
+title: "Assignment 9 - Publication-ready figures"
+author: "Luke Henslee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r, include=FALSE, results=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(extrafont)
+library(ggpubr)
+# Load fonts
+loadfonts(device = "win")
+```
+
+### Figure 1  
+
+#### 1) Import data   
+
+```{r}
+glass <- read.csv("sea_glass_data_LH.csv")
+```
+
+#### 2) Build plot  
+
+```{r}
+# Build 'glassplot'
+glassplot <- ggplot(data = glass, aes(x = Length, y = Weight, fill = Class)) +
+geom_point(shape = 21, size = 2) +
+scale_y_continuous (limits = c(0,40), expand = c(0,0), breaks = seq(0,40,10)) +
+scale_x_continuous(limits = c(10,60), expand = c(0,0), breaks = seq(10,60,10)) +
+scale_fill_manual(limits = c("Green", "Brown"), labels = c("Green", "Brown"),
+      values = c("black", "white")) +
+ylab("Weight (g)") +
+xlab("Length (mm)") +
+labs(fill = "") +
+theme_classic() +
+theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+      axis.title.x = element_text(size = 14, margin = margin(t = 10, r = 0, b = 0, l = 0), colour = "black"),
+      text = element_text(family = "Times New Roman"),
+      legend.position = c(0.3,0.85),
+      legend.text = element_text(size = 12),
+      plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 14, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 14, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"))
+glassplot
+```
+
+#### 4) Save plot
+```{r}
+dev.new(width = 2.75, height = 1.83, units = "in", noRStudioGD = TRUE)
+last_plot()
+
+ggsave(file = "Pub_ready_figure_1_LH.tiff", width = dev.size()[1], height = dev.size()[2], dpi = 300)
+```
+
+#### 5) SLR on Weight ~ Length by color
+```{r}
+green <- glass %>% 
+  filter(glass$Class == "Green")
+brown <- glass %>% 
+  filter(glass$Class == "Brown")
+lmgreen <- lm(Weight ~ Length, data = green)
+lmbrown <- lm(Weight ~ Length, data = brown)
+
+```
+#### 6) Add regression lines to plot
+```{r}
+glassplot_lm <- glassplot +
+  geom_abline(slope = coef(lmgreen)[2], intercept = coef(lmgreen)[1]) +
+  geom_abline(slope = coef(lmbrown)[2], intercept = coef(lmbrown)[1],
+              linetype = "dashed") +
+  stat_regline_equation(label.y = c(5, 18), label.x = c(38,28), aes(family = "Times New Roman"), data = glass)
+
+glassplot_lm
+```
+
+#### 7) Save updated plot
+```{r}
+dev.new(width = 2.75, height = 1.83, units = "in", noRStudioGD = TRUE)
+last_plot()
+
+ggsave(file = "Pub_ready_figure_1b_LH.jpeg", width = dev.size()[1], height = dev.size()[2], dpi = 300)
+dev.off()
+```
+
+### Figure 2
+
+#### 1) Build plot  
+
+```{r}
+# Build 'glassplot2'
+glassplot2 <- ggplot(data = glass, aes(x = Class, y = Length)) +
+geom_boxplot() +
+scale_y_continuous (limits = c(0,60), expand = c(0,0), breaks = seq(0,60,15)) +
+ylab("Length (mm)") +
+xlab("") +
+labs(fill = "") +
+theme_classic() +
+theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+      axis.title.x = element_text(size = 14, margin = margin(t = 10, r = 0, b = 0, l = 0), colour = "black"),
+      text = element_text(family = "Times New Roman"),
+      legend.position = c(0.3,0.85),
+      legend.text = element_text(size = 12),
+      plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 14, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 14, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"))
+glassplot2
+```
+
+#### 2) Save plot
+```{r}
+dev.new(width = 2.75, height = 1.83, units = "in", noRStudioGD = TRUE)
+last_plot()
+
+ggsave(file = "Pub_ready_figure_2_LH.jpeg", width = dev.size()[1], height = dev.size()[2], dpi = 300)
+```
+
