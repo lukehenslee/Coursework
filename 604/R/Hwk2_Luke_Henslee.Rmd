@@ -1,0 +1,300 @@
+---
+title: "Homework 2- Chatham sablefish growth "
+author: "Luke Henslee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r include=FALSE}
+library(tidyverse)
+
+setwd("C:/Users/lukeh/Desktop/Grad School/Coursework/604/HW/HW2")
+
+sable <- read.csv("sablefish.csv", as.is=F)
+```
+
+### Problem 1: Data import and exploration
+
+#### Explore length distribution by plotting histograms or density plots of the length of sablefish overall and by sex.
+
+#### a) Histogram of sablefish lengths
+```{r message=FALSE, warning=FALSE}
+ggplot(data = sable, aes(x = Length)) +
+  geom_histogram()
+```
+
+#### b) Histogram of sablefish lengths by sex
+```{r message=FALSE, warning=FALSE}
+ggplot(data = sable, aes(x = Length)) +
+  geom_histogram(aes(fill = Sex))
+```
+
+#### c) Density plot of sablefish lengths
+```{r message=FALSE, warning=FALSE}
+ggplot(data = sable, aes(x = Length)) +
+  geom_density(fill = 'lightgreen')
+```
+
+#### d) Density plot of sablefish lengths by sex
+```{r message=FALSE, warning=FALSE}
+ggplot(data = sable, aes(x = Length)) +
+  geom_density(aes(fill = Sex))
+```
+
+#### Are there obvious differences in the length distribution between males and females?
+Yes, males have a tighter length distribution with a smaller mean. Female length distribution tends to be wider with a larger median and mean.
+
+
+### Problem 2: Data exploration
+
+#### Show a few illustrative plots by saving graphical output or copying and pasting them into your results file. To paste into Word, the Windows metafile format usually works well! Add a figure caption that clearly states what the figures show.
+
+#### a) Length at age
+```{r message=FALSE, warning=FALSE, fig.cap = "Figure 1- Length at age by sex for Chatham Strait sablefish."}
+ggplot(data = sable, aes(x= Age, y= Length)) +
+  geom_jitter(aes(color = Sex)) +
+  geom_smooth(aes(color=Sex), method="loess", level=0.95)
+```
+
+
+#### b) Weight at age
+```{r message=FALSE, warning=FALSE, fig.cap = "Figure 2- Weight at age by sex for Chatham Strait sablefish."}
+ggplot(data = sable, aes(x= Age, y= Weight)) +
+  geom_jitter(aes(color = Sex)) +
+  geom_smooth(aes(color=Sex), method="loess", level=0.95)
+```
+
+
+#### c) Length-weight relationship by year
+```{r message=FALSE, warning=FALSE, fig.cap = "Figure 3- Length-weight relationship by year and by sex for Chatham Strait sablefish."}
+ggplot(data = sable, aes(x= Length, y= Weight)) +
+  geom_jitter(aes(color = Sex), pch=1) +
+  geom_smooth(aes(color=Sex), method="loess", level=0.95) +
+  facet_wrap(~Year)
+```
+
+
+#### Questions: Does there appear to be an asymptotic length and/or weight for males and females? Does there appear to be a difference in growth between males and females? Are there apparent differences in the length-weight relationship among years?
+
+Asymptotic length is evidenced in males at ~750 mm and in females at ~850 mm, according to our loess smoother. Male weight approaches an asymptote of ~5 kg, while females appear to reach ~ 8 kg.
+
+Although males are smaller on average, they appear to exhibit growth rates proportional to females. Growth curves for weight and age are offset on the y-axis, suggesting males grow at a similar rate to females. Both sexes appear to reach asymptotic length/weights around the same age class.
+
+When we examine length-weight relationships (Figure 3), there does not appear to be a difference among years. Both sexes display steep increases in weight as they grow lengthwise in all years. 2006 appears to have an cluster of underweight males which could influence regression coefficients for that year.  
+
+
+### Problem 3: Fit LVB growth model
+
+#### a) Based on the previous graphical analyses (disregarding sexes, i.e. we fit the model to both sexes combined) and the interpretation of the parameters in the model, choose reasonable starting values for L.inf and a0 and justify your choice! Use 0.05 for the growth parameter k.
+
+First, lets plot length for both sexes to find a good starting value for L.inf and a0.
+```{r message=FALSE, warning=FALSE}
+ggplot(data = sable, aes(x= Age, y= Length)) +
+  geom_jitter() +
+  geom_smooth(method="loess", level=0.95)
+```
+
+It looks like 800 mm might be a good starting value for L.inf and a0 might be around -15. Lets plot the resulting curve by plugging these values into the LVB function.
+
+```{r message=FALSE, warning=FALSE}
+LvB <- function(a, k, L.inf, a0) {
+  L.inf*(1-exp(-k*(a-a0)))
+}
+
+# We were given 0.05 for the growth parameter k, plug in our other parameter estimates.
+ST <- c(k = 0.05, L.inf = 800 , a0 = -15)
+
+plot(jitter(Length) ~ jitter(Age), data=sable, col=2)
+lines(1:80, LvB(1:80, k = ST[1], L.inf = ST[2], a0 = ST[3]), lwd=3)
+
+```
+
+Looks reasonable.
+
+#### b) Use these coefficients to compute predicted values over a range of length values and add a fitted line to the scatterplot.
+
+Use 'nls' function to fit non-linear model and use parameters to add fitted line to a scatterplot of the data
+```{r}
+fit <- nls(Length ~ LvB(Age, k, L.inf, a0), data = sable, start = ST)
+coef(fit)
+```
+
+Plot fitted model over observations
+```{r message=FALSE, warning=FALSE}
+plot(jitter(Length) ~ jitter(Age), data=sable, col=2)
+cf <- coef(fit)
+
+# Add the fitted model to the scatterplot...
+lines(1:80, LvB(1:80, k = cf[1], L.inf = cf[2], a0 = cf[3]), lwd=3)
+```
+
+#### c) Construct a 95% confidence interval for the overall growth parameter and for the estimated mean length at infinity.
+
+```{r}
+confint.k <-cf[1] + c(-2, 2) * summary(fit)$coef[1,2]
+
+print(paste("The 95% confidence interval for the overall growth parameter 'k' is", round(confint.k[1], digits = 3), ",", round(confint.k[2], digits = 3)))
+```
+
+```{r}
+confint.L.inf <-cf[2] + c(-2, 2) * summary(fit)$coef[2,2]
+
+print(paste("The 95% confidence interval for estimated mean length at infinity 'L.inf' is", round(confint.L.inf[1], digits = 3), ",", round(confint.L.inf[2], digits = 3)))
+```
+
+
+### Problem 4: Diagnostics
+
+#### a) Plot distribution of the residuals
+
+```{r message=FALSE, warning=FALSE, fig.cap = "Boxplot of overall residual distribution."}
+r <- resid(fit)
+
+p <- ggplot(data = sable, aes(x = r))
+
+p + geom_histogram() +
+  geom_vline(xintercept = 0)
+```
+
+
+```{r message=FALSE, warning=FALSE, fig.cap = "Distribution of residuals by sex."}
+
+p + geom_histogram(aes(fill = Sex)) +
+  geom_vline(xintercept = 0)
+```
+
+```{r message=FALSE, warning=FALSE, fig.cap = "Distribution of resdiuals by year."}
+
+ggplot(data = sable, aes(as.factor(Year), r)) +
+  geom_boxplot() +
+  geom_hline(yintercept = 0)
+
+```
+
+```{r message=FALSE, warning=FALSE, fig.cap = "Distribution of resdiuals by year and by sex."}
+
+ggplot(data = sable, aes(as.factor(Year), r)) +
+  geom_boxplot(aes(fill = Sex)) +
+  geom_hline(yintercept = 0)
+
+```
+
+```{r message=FALSE, warning=FALSE, fig.cap = "Distribution of resdiuals by age and by sex."}
+
+ggplot(data = sable, aes(as.factor(Age), r)) +
+  geom_boxplot() +
+  geom_hline(yintercept = 0)
+
+```
+
+#### b) Discuss validity of assumptions of residual distribution
+
+From the histogram of residuals for all observations, it appears that they are normally distributed around a mean of 0. However, when we look at a histogram of residuals by sex it appears that residuals for observations of males are normally distributed- but have a mean of less than 0.
+
+Examining a boxplot of residuals across years, it appears that they are reasonably normally distributed, with 2002 having a bit of a left-tail. When we compare residuals between sexes across years, it again appears that females are normally-distributed around a larger mean than males.
+
+When we look at a boxplot of residuals by age we can see that the younger and older age classes deviate substantially from normally distributed residuals.
+
+#### c) Dealing with violated assumptions
+
+In this case, we would probably want to fit a LVB model to each sex in order to get normally distributed residuals that would satisfy regression assumptions.
+
+### Problem 5: Repeat analysis of growth seperately by sex for a single year
+
+```{r}
+# LVB model for male sablefish
+sable.male <- sable %>%
+  filter(Sex == "Male") %>% 
+  filter(Year == 2002)
+
+ST.male <- c(k = 0.05, L.inf = 750, a0 = -15)
+
+fit.male <- nls(Length ~ LvB(Age, k, L.inf, a0), data = sable.male, start = ST.male)
+cf.male <- coef(fit.male)
+
+#LVB model for female sablefish
+sable.female <- sable %>%
+  filter(Sex == "Female") %>% 
+  filter(Year == 2002)
+
+ST.female <- c(k = 0.05, L.inf = 850, a0 = -15)
+
+fit.female <- nls(Length ~ LvB(Age, k, L.inf, a0), data = sable.female, start = ST.female)
+cf.female <- coef(fit.female)
+
+```
+
+#### a) Plots of fitted lines over data
+
+Using base R graphics:
+```{r}
+plot(jitter(Length) ~ jitter(Age), data=sable.female, col=2)
+lines(1:80, LvB(1:80, k = cf.female[1], L.inf = cf.female[2], a0 = cf.female[3]), lwd=3)
+```
+```{r}
+plot(jitter(Length) ~ jitter(Age), data=sable.male, col=4)
+lines(1:80, LvB(1:80, k = cf.male[1], L.inf = cf.male[2], a0 = cf.male[3]), lwd=3)
+```
+
+Using ggplot
+```{r}
+ggplot(data = sable, aes(x = Age, y = Length, color = Sex)) +
+  geom_point(aes(col = Sex)) +
+  stat_smooth(method = 'nls', formula = 'y~a*(1-exp(-b*(x-c)))',
+              method.args = list(start = c(a=750, b=0.05, c=-30)), se = FALSE)
+```
+
+#### b) Summarize parameter estimates and SE for males and females and compute 95% confidence intervals for k by sex
+
+Female sablefish parameter estimates:
+```{r echo=FALSE}
+(female <- summary(fit.female))
+```
+
+Male sablefish parameter estimates:
+```{r echo=FALSE}
+(male <- summary(fit.male))
+```
+
+```{r}
+confint.k.male <- cf.male[1] + c(-2, 2) * summary(fit.male)$coef[1,2]
+
+print(paste("The 95% confidence interval for growth parameter 'k' for males is", round(confint.k.male[1], digits = 3), ",", round(confint.k.male[2], digits = 3)))
+```
+
+```{r}
+confint.k.female <- cf.female[1] + c(-2, 2) * summary(fit.female)$coef[1,2]
+
+print(paste("The 95% confidence interval for growth parameter 'k' for females is", round(confint.k.female[1], digits = 3), ",", round(confint.k.female[2], digits = 3)))
+
+```
+
+
+#### c) Test for a difference in 'k' between males and females using the Wald test
+
+```{r}
+
+w.k <- (female$coefficients[1,1] - male$coefficients[1,1])^2/ (female$coefficients[1,2]^2 + male$coefficients[1,2]^2)
+
+pchisq(w.k, df = 1)
+
+```
+
+The probability of random variable with a Chi-squared distribution with 1 df is smaller than the observed value of W is 0.05 and we would fail to reject the null that the difference between parameter estimates is zero.
+
+#### d) Test for a difference in 'L.inf' between male and female sablefish from a single year using the Wald test
+
+```{r}
+w.L <- (female$coefficients[2,1] - male$coefficients[2,1])^2/ (female$coefficients[2,2]^2 + male$coefficients[2,2]^2)
+
+pchisq(w.L, df = 1)
+
+```
+
+The probability of random variable with a Chi-squared distribution with 1 df is smaller than the observed value of W is 1 and we would reject the null hypothesis that the difference between parameter estimates is zero.
+
+#### e) Summarize conclusions about growth of male and female sablefish 
+
+According to the summaries of our fitted models and the diagnostic tests run on the differences between LVB parameters, the growth rates between sexes are not significantly different and females grow to ultimately be larger than males. 

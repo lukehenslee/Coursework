@@ -1,0 +1,51 @@
+---
+title: "Student project- Data exploration"
+author: "Luke Henslee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r, include=FALSE, results=FALSE}
+
+library(ggpubr)
+library(forcats)
+library(ggforce)
+library(lubridate)
+library(RColorBrewer)
+library(viridis)
+library(tidyverse)
+library(ggplot2)
+library(bbmle)
+library(dplyr)
+library(manipulate)
+library(visreg) 
+library(ggridges)
+library(reshape2)
+library(cowplot)
+library(ggmap)
+library(ggspatial)
+library(sf)
+library(spData)
+library(ggsn)
+library(extrafont)
+loadfonts(device = "win")
+
+```
+
+```{r include=FALSE}
+setwd("C:/Users/lukeh/Desktop/Grad School/Coursework/604/HW/HW2")
+
+mcode <- read.csv("sablefish.csv", as.is=F)
+
+library(ggplot2)
+library(tidyverse)
+```
+
+### Question 1- Can we identify a spatiotemporal covariate to estimate probibility of stock membership?
+
+My idea is to use CPUE metrics to estimate stock-specific catch rate parameters in different spatial and temporal strata. It might be possible to use a non-linear model with a Poisson distribution to describe catch rates
+
+### Question 2- Can we estimate stock proportions of commercial harvest?
+
