@@ -1,0 +1,288 @@
+---
+title: 'Final project '
+author: "Luke Henslee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+---
+
+```{r, include=FALSE, results=FALSE}
+
+library(ggpubr)
+library(forcats)
+library(ggforce)
+library(lubridate)
+library(RColorBrewer)
+library(viridis)
+library(tidyverse)
+library(ggplot2)
+library(bbmle)
+library(dplyr)
+library(manipulate)
+library(visreg) 
+library(ggridges)
+library(reshape2)
+library(cowplot)
+library(ggmap)
+library(ggspatial)
+library(sf)
+library(spData)
+library(ggsn)
+library(extrafont)
+loadfonts(device = "win")
+
+```
+
+### Figure 1  
+
+#### 1) Import data   
+
+```{r}
+setwd("C:/Users/lukeh/Desktop/Grad School/Coursework/635/data")
+
+mcode <- read.csv("M_code_list_V12.csv")
+```
+
+#### 2) Subset data
+```{r}
+# Subset data to fish assigned to stocks
+stocks <- filter(mcode, mcode$Spawning.group %in% c("4", "5", "6", "S"))
+```
+
+#### 3) Build plot
+```{r}
+# Build 'lengthdist'
+lengthdist <- ggplot(data = stocks, aes(x = Spawning.group, y = Length)) +
+geom_boxplot() +
+  scale_x_discrete(breaks = c("6", "5", "4", "S"), 
+    labels = c("Unalakleet", "Shaktoolik", "Norton Bay", "Yukon")) +
+scale_y_continuous (limits = c(375,700), expand = c(0,0), breaks = seq(400,700,50)) +
+ylab("Length (mm)") +
+xlab("") +
+labs(fill = "") +
+theme_classic() +
+theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+      axis.title.x = element_text(size = 14, margin = margin(t = 10, r = 0, b = 0, l = 0), colour = "black"),
+      text = element_text(family = "Times New Roman"),
+      legend.position = c(0.3,0.85),
+      legend.text = element_text(size = 12),
+      plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 14, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 14, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"))
+
+lengthdist
+```
+
+### Figure 2
+
+#### 1) Lubridate
+```{r}
+stocks$Date <- mdy(stocks$Date)
+```
+
+#### 2) Build plot
+```{r}
+ggplot(stocks, aes(x = yday(Date), y = ..count..)) +
+  geom_density_line(data = select(stocks, -Spawning.group), alpha = 0.5, color = "darkgrey", fill = "lightgrey", size = 0.5) +
+  geom_density_line(aes(fill = fct_infreq(Spawning.group)), alpha = 0.5, color = "black", size = 0.5) +
+  scale_x_continuous(name = "Day of year", limits = c(213,239), expand = c(0,0), breaks = seq(215,235,5)) +
+  scale_y_continuous(name = "Count", expand = c(0, 0), limits = c(0, 22), breaks = seq(5, 20, 5)) +
+  scale_fill_brewer(type = "qual", guide = "legend",
+    palette = "Set2", name = "Stocks", breaks = c("6", "5", "4", "S"), 
+    labels = c("SD6", "SD5", "SD4", "South")) +
+  theme_classic() +
+theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+      axis.title.x = element_text(size = 14, margin = margin(t = 10, r = 0, b = 0, l = 0), colour = "black"),
+      text = element_text(family = "Times New Roman"),
+      legend.position = c(0.75,0.75),
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 12),
+      plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 14, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 14, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"),
+      panel.border = element_rect(color = "black", fill = "transparent", size = 0.5))
+```
+
+### Figure 3
+
+#### 1) Build plot
+```{r}
+ggplot(data = stocks, aes(x = Spawning.group, y = Lat)) +
+  geom_violin(aes(fill = fct_infreq(Spawning.group)), alpha = 0.5, color = "black", size = 0.5) +
+  geom_hline(yintercept = 64.131287, linetype = "dashed") +
+  geom_sina() +
+  scale_x_discrete(name = "", breaks = c("6", "5", "4", "S"), 
+    labels = c("SD6", "SD5", "SD4", "South")) + 
+  scale_y_continuous(name = "Latitude of capture", expand = c(0, 0), limits = c(63.8, 64.4), breaks = seq(63.8, 64.4, 0.2)) +
+  scale_fill_brewer(type = "qual", guide = "legend",
+    palette = "Set2", name = "Stocks", breaks = c("6", "5", "4", "S"), 
+    labels = c("Unalakleet", "Shaktoolik", "Norton Bay", "Yukon")) +
+  theme_classic() +
+theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+      axis.title.x = element_blank(),
+      text = element_text(family = "Times New Roman"),
+      legend.position = "none",
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 12),
+      plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 12, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 14, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"),
+      panel.border = element_rect(color = "black", fill = "transparent", size = 0.5))
+```
+
+### Figure 4
+
+#### 1) Creat glm
+```{r}
+# Create binomial response for terminal stocks in Shaktoolik subdistrict
+stocks5 <- filter(stocks, stocks$Tag.group == 2)
+
+# Creat bionmial response column 
+bi <- vector(length = nrow(stocks5))
+
+for(i in 1:length(bi)) {
+  if(stocks5[i,31] == stocks5[i,32]) {
+    bi[i] <- 1
+  } else {
+    bi[i] <- 0
+  }
+}
+
+stocks5$binomial <- bi
+
+# Build model
+bi_model <- glm(binomial ~ Lat + Long, data = stocks5,
+                  family = binomial(link = "logit"))
+```
+
+#### 2) Build plot
+```{r message=FALSE, warning=FALSE}
+ggplot(stocks5, aes(Lat, binomial)) +
+  geom_point(shape = 3, size = 5) +
+  geom_smooth(size = 0.5, color = "black", method = "glm", se = T, 
+              method.args = list(family = "binomial")) +
+  scale_x_continuous(name = "Latitude (\u00B0N)", expand = c(0,0), 
+                     breaks = seq(64.15, 64.35, .05)) +
+  scale_y_continuous(name = "Probability of terminal stock membership", 
+                     expand = c(0, 0), 
+                     limits = c(0, 1), 
+                     breaks = seq(0, 1, .2)) +
+  theme_classic() +
+  theme (axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+         axis.title.x = element_text(size = 14, margin = margin(t = 10, r = 0, b = 0, l = 0), colour = "black"),
+         text = element_text(family = "Times New Roman"),
+         legend.position = c(0.75,0.75),
+         legend.text = element_text(size = 12),
+         legend.title = element_text(size = 12),
+         legend.key.size = unit(.5, "cm"),
+         plot.margin = unit(c(0.2, 0.1, 0.1, 0.1), "cm"),
+         axis.ticks.y = element_line(size = 0.5),
+         axis.ticks.x = element_line(size = 0.5),
+         axis.ticks.length = unit(0.2,"cm"),
+         axis.text.y = element_text(colour = "black", size = 14, angle = 0, vjust = 0.5, hjust = 1,
+                                    margin = margin(t = 0, r = 5, b = 0, l = 0)),
+         axis.text.x = element_text(colour = "black", size = 14, vjust = 0, hjust = 0.5,
+                                    margin = margin(t = 5, r = 0, b = 0, l = 0)),
+         axis.line = element_line(colour = "black", size = 0.5, lineend = "square"),
+         panel.border = element_rect(color = "black", fill = "transparent", size = 0.5))
+```
+
+### Figure 5
+
+#### 1) Generate predictions
+```{r message=FALSE, warning=FALSE}
+# Import coordinates from shoreline of SD5
+
+pred.coords <- read.csv("pred_coords.csv")
+
+# Predict model output values and create dataframe
+Likelihood <- predict(bi_model, data.frame(Lat = pred.coords$lat, Long = pred.coords$long),
+                  type = "response")
+
+pred.data <- data.frame(cbind(pred.coords$lat, pred.coords$long, Likelihood))
+
+```
+
+#### 2) Create basemap
+```{r message=FALSE, warning=FALSE}
+SD5map <- c(left = -161.6, bottom = 64.1, right = -160.8, top = 64.5)
+
+SD5 <- ggmap::get_stamenmap (bbox = SD5map, zoom = 10, maptype = "terrain-background", where = "cache")
+
+SD5 <- get_map(location=c(-161.6, 64.1,-160.8, 64.5),
+                maptype='terrain-background',source='stamen',crop=TRUE, zoom = 11) 
+```
+
+#### 3) Create stat map
+```{r message=FALSE, warning=FALSE}
+statmap <- ggmap(SD5) +
+  geom_point(data = pred.data, aes(x = V2, y = V1, color = Likelihood), size = 5, alpha = 0.5) +
+  labs(fill = "Likelihood") +
+  xlab(NULL) + ylab(NULL) +
+  scale_x_continuous(breaks = c(-161.4, -161), expand = c(0,0)) +
+  scale_y_continuous(breaks = c(64.2, 64.3, 64.4), expand = c(0,0)) + 
+  annotation_north_arrow(style = north_arrow_nautical()) +
+  coord_sf(crs = 4326) +
+  annotation_scale(style = "ticks", location = "br", height = unit(2, "mm"),
+                   tick_height = 1, text_cex = 1, line_width = 2) +
+  theme(axis.title.y = element_text(size = 14, margin = margin(t = 0, r = 10, b = 0, l = 0), colour = "black"),
+        axis.title.x = element_text(size = 14, margin = margin(t = 0, r = 0, b = 0, l = 0), colour = "black"),
+        text = element_text(family = "Times New Roman")) +
+  theme (panel.border = element_rect (fill = "transparent", color = "grey20", size = 2)) +
+  theme (legend.position = c(0.75,0.75),
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 12),
+      plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+      axis.ticks.y = element_line(size = 0.5),
+      axis.ticks.x = element_line(size = 0.5),
+      axis.ticks.length = unit(0.2,"cm"),
+      axis.text.y = element_text(colour = "black", size = 14, angle = 0, vjust = 0.5, hjust = 1,
+          margin = margin(t = 0, r = 5, b = 0, l = 0)),
+      axis.text.x = element_text(colour = "black", size = 14, angle = 0, vjust = 0, hjust = 0.5,
+          margin = margin(t = 5, r = 0, b = 0, l = 0)),
+      axis.line = element_line(colour = "black", size = 0.5, lineend = "square"),
+      panel.border = element_rect(color = "black", fill = "transparent", size = 0.5))+
+  theme (plot.margin = unit(c(0,0,.5,0), "cm")) 
+```
+
+#### 4) Create subset map
+```{r message=FALSE, warning=FALSE}
+alaska.box2 <- c(left = -169, bottom = 60, right = -145, top = 68)
+alaska.base2 <- ggmap::get_stamenmap (bbox = alaska.box2, zoom = 5, maptype = "terrain-background", 
+                                     where = "cache")
+alaska <- ggmap(alaska.base2) +
+  geom_rect(xmin = -161.5, xmax = -160.5, ymin = 64, ymax = 64.5, fill = "transparent", 
+            color = "grey20", size = .5) + theme_void() + 
+  theme (panel.border = element_rect (fill = "transparent", color = "grey20", size = 1)) +
+  theme (plot.margin = unit(c(0,0,0,0), "cm"))
+```
+
+#### 5) Combine maps
+```{r message=FALSE, warning=FALSE}
+figmap <- ggdraw() +
+  draw_plot(statmap) +
+  draw_plot(alaska, x = 0.30, y = 0.30, width = 0.25, height = 0.25)
+
+figmap
+```
+

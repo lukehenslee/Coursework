@@ -1,0 +1,121 @@
+---
+title: "Student project- Data exploration"
+author: "Luke Henslee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+---
+
+### Import data
+```{r echo=TRUE, results=FALSE}
+
+library(tidyverse)
+
+setwd("C:/Users/lhhenslee/Desktop/Luke/School/Coursework/604/data")
+
+# Import mcode list
+
+  # The mcode list contains capture data (including environmental observations), recapture information, acoustic detection history, and final fates for each tagged salmon
+
+    # 'colClasses.csv' is just a list for 'colClasses' argument of read.csv() 
+colClasses <- read.csv("colClasses.csv", header = T)
+
+    # Import data
+mcode <- read.csv("mcode.csv", colClasses = paste(colClasses[1, ])) 
+
+
+# Import cpue dataset
+
+  # This dataset contains location, environmental observations, and CPUE for each sample attempt
+cpue <- read.csv("cpue.csv")
+
+```
+
+
+### Data exploration
+
+#### mcode data
+```{r echo=TRUE}
+# Let's look at the mcode data
+
+str(mcode)
+head(mcode)
+
+```
+
+Could perhaps use some data reduction.... 
+
+```{r}
+# Data visualization
+
+ggplot(data = mcode, aes(x = spawn.group)) +
+  geom_bar()
+
+ggplot(data = mcode, aes(x = final.fate)) +
+  geom_bar(aes(fill = tag.group))
+
+ggplot(data = mcode, aes(x = capture.date)) +
+  geom_bar(aes(fill = tag.group))
+
+```
+
+#### CPUE data
+```{r echo=TRUE}
+# Let's look at the cpue data
+
+str(cpue)
+head(cpue)
+
+```
+
+```{r}
+# Data visualization
+
+plot(cpue$julian.date, cpue$CPUE)
+
+ggplot(data = cpue, aes(julian.date, CPUE)) +
+  geom_point() +
+  geom_smooth()
+
+ggplot(data = cpue, aes(julian.date, CPUE)) +
+  geom_point(aes(color = site)) +
+  geom_smooth(aes(color = site), method = "loess")
+
+
+```
+
+### Playing around with GLM
+```{r}
+
+ggplot(data = cpue, aes(x = lat, y = fish)) +
+  geom_point() +
+  stat_smooth(method = 'glm',  method.args = list(family = "poisson"),
+              formula = y ~ x + I(x^2))
+
+# Minus the outlier
+outlier <- cpue %>% 
+  filter(lat < 65.5)
+
+ggplot(data = outlier, aes(x = lat, y = fish)) +
+  geom_point() +
+  stat_smooth(method = 'glm',  method.args = list(family = "poisson"),
+              formula = y ~ x + I(x^2))
+
+```
+
+
+### Question 1- Can we identify a spatiotemporal covariate to estimate probibility of stock membership?
+
+My idea is to use CPUE metrics to estimate stock-specific catch rate parameters in different spatial and temporal strata. It might be possible to use a non-linear model with a Poisson distribution to describe catch rates.
+
+Are there autocorrelation issues based on distance between capture location and homestream? Or between week of capture and peak of stock run?
+
+CPUE is not count data, does Poisson work?
+
+### Question 2- Can we estimate stock proportions of commercial harvest?
+
+Based on the results from question 1, can we apply stock-specific catch rates to commercial harvests in spatial and temporal strata to estimate catch stock proportions?
+
+The goal is to evaluate weather stock-specific harvest strategies can be formulated based on probabilities of stock-specific capture in several spatial and temporal strata (i.e. commercial fishing subdistricts, ADF&G statistical weeks)
+
